@@ -11,6 +11,7 @@ function Meme() {
   const [filteredMemes, setFilteredMemes] = useState([]);
   const [captions, setCaptions] = useState([]);
   const [previewMem, setPreviewMem] = useState("");
+  const [captionValid, setCaptionValid] = useState(false);
   const navigate = useNavigate();
   const inputText = useRef();
 
@@ -29,6 +30,10 @@ function Meme() {
     }
   }, [memeIndex, memes]);
 
+  useEffect(() => {
+    setCaptionValid(captions.some((el) => el.length > 0));
+  }, [captions]);
+
   // UTILITI FUNCTION
 
   const generateMem = () => {
@@ -37,16 +42,18 @@ function Meme() {
     fd.append("username", "zilemem");
     fd.append("password", "zile1234");
     fd.append("template_id", currentMeme.id);
+
     captions.forEach((c, index) => fd.append(`boxes[${index}][text]`, c));
 
-    fetch("https://api.imgflip.com/caption_image", {
-      method: "POST",
-      body: fd,
-    })
-      .then((res) => res.json())
-      .then((res) => {
-        navigate("/generated?url=" + res.data.url);
-      });
+    captionValid &&
+      fetch("https://api.imgflip.com/caption_image", {
+        method: "POST",
+        body: fd,
+      })
+        .then((res) => res.json())
+        .then((res) => {
+          navigate("/generated?url=" + res.data.url);
+        });
   };
 
   const previewTemplateMem = (index) => {
@@ -55,6 +62,9 @@ function Meme() {
     fd.append("username", "zilemem");
     fd.append("password", "zile1234");
     fd.append("template_id", currentMeme.id);
+
+    // captions.forEach((c, index) => fd.append(`boxes[${index}][text]`, c))
+
     for (let i = 0; i < currentMeme.box_count; i++) {
       fd.append(`boxes[${i}][text]`, "Text " + i);
     }
@@ -113,8 +123,9 @@ function Meme() {
       <div className="meme-control">
         <div className="input-holder" ref={inputText}>
           <button className="generate" onClick={generateMem}>
-            Generate
+            {captionValid ? "Generate" : "Populate any input text"}
           </button>
+
           <input
             type="text"
             placeholder="Input Meme template name"
