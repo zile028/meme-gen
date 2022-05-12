@@ -1,9 +1,28 @@
 .container {
   margin-top: 50px;
 }
+
 .skip {
   background-color: orange;
 }
 .generate {
   background-color: cadetblue;
+}
+
+.memes-holder {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: 10px;
+}
+
+.meme-control {
+  display: flex;
+  justify-content: center;
+  gap: 50px;
+  align-items: flex-start;
+}
+
+.meme-preview img {
+  margin: 0;
 }

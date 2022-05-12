@@ -1,20 +1,25 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import AllTemplate from "../AllTemplate/AllTemplate";
+
 import "./Meme.css";
 
 function Meme() {
   // STATE
   const [memes, setMemes] = useState([]);
   const [memeIndex, setMemeIndex] = useState(0);
+  const [filteredMemes, setFilteredMemes] = useState([]);
   const [captions, setCaptions] = useState([]);
+  const [previewMem, setPreviewMem] = useState("");
   const navigate = useNavigate();
+  const inputText = useRef();
 
   // EFFECT
   useEffect(() => {
     fetch("https://api.imgflip.com/get_memes")
       .then((res) => res.json())
       .then((res) => {
-        setMemes(randomize(res.data.memes));
+        setMemes(res.data.memes);
       });
   }, []);
 
@@ -29,7 +34,6 @@ function Meme() {
   const generateMem = () => {
     const currentMeme = memes[memeIndex];
     const fd = new FormData();
-
     fd.append("username", "zilemem");
     fd.append("password", "zile1234");
     fd.append("template_id", currentMeme.id);
@@ -45,56 +49,103 @@ function Meme() {
       });
   };
 
-  const updateCaption = (e, index) => {
-    const text = e.target.value || "";
-    setCaptions(
-      captions.map((c, i) => {
-        if (index === i) {
-          return text;
-        } else {
-          return c;
-        }
-      })
-    );
+  const previewTemplateMem = (index) => {
+    const currentMeme = memes[index];
+    const fd = new FormData();
+    fd.append("username", "zilemem");
+    fd.append("password", "zile1234");
+    fd.append("template_id", currentMeme.id);
+    for (let i = 0; i < currentMeme.box_count; i++) {
+      fd.append(`boxes[${i}][text]`, "Text " + i);
+    }
+
+    fetch("https://api.imgflip.com/caption_image", {
+      method: "POST",
+      body: fd,
+    })
+      .then((res) => res.json())
+      .then((res) => setPreviewMem(res.data.url));
   };
 
-  const randomize = (arr) => {
-    let arrCopy = [].concat(arr);
-    let radndomizeArr = [];
-    for (let i = 0; i < arr.length; i++) {
-      let rand = Math.floor(Math.random() * arrCopy.length);
-      radndomizeArr.push(arrCopy[rand]);
-      arrCopy.splice(rand, 1);
+  const updateCaption = (e, index) => {
+    const text = e.target.value;
+    if (text.length > 0) {
+      setCaptions(
+        captions.map((c, i) => {
+          if (index === i) {
+            return text;
+          } else {
+            return c;
+          }
+        })
+      );
     }
-    return radndomizeArr;
+  };
+
+  const getMemesTemplate = (e) => {
+    const term = e.target.value;
+    if (term.length > 3) {
+      let rg = new RegExp(term, "gi");
+      let filterized = memes.filter((mem) => {
+        return rg.test(mem.name);
+      });
+      setFilteredMemes(filterized);
+    } else if (term.length === 0) {
+      setFilteredMemes([]);
+      setPreviewMem("");
+    }
+  };
+
+  const selectedMeme = (id) => {
+    memes.forEach((meme, index) => {
+      if (meme.id === id) {
+        setMemeIndex(index);
+        previewTemplateMem(index);
+      }
+    });
+    inputText.current.scrollIntoView();
   };
 
   //   RETURN TO RENDER
+
   return memes.length ? (
     <div className="container">
-      <button className="generate" onClick={generateMem}>
-        Generate
-      </button>
-      <button
-        className="skip"
-        onClick={() => {
-          setMemeIndex(memeIndex + 1);
-        }}
-      >
-        Skip
-      </button>
+      <div className="meme-control">
+        <div className="input-holder" ref={inputText}>
+          <button className="generate" onClick={generateMem}>
+            Generate
+          </button>
+          <input
+            type="text"
+            placeholder="Input Meme template name"
+            onInput={getMemesTemplate}
+          />
 
-      {captions.map((c, index) => (
-        <input
-          type="text"
-          key={index}
-          onInput={(e) => {
-            updateCaption(e, index);
-          }}
-        />
-      ))}
+          {previewMem &&
+            captions.map((c, index) => (
+              <input
+                type="text"
+                key={index}
+                placeholder={"Text " + index}
+                onInput={(e) => {
+                  updateCaption(e, index);
+                }}
+              />
+            ))}
+        </div>
 
-      <img src={memes[memeIndex].url} alt="" />
+        <div className="meme-preview">
+          {previewMem && <img src={previewMem} alt="" />}
+        </div>
+      </div>
+
+      <div className="memes-holder">
+        {filteredMemes.length ? (
+          <AllTemplate memes={filteredMemes} selectedMeme={selectedMeme} />
+        ) : (
+          <AllTemplate memes={memes} selectedMeme={selectedMeme} />
+        )}
+      </div>
     </div>
   ) : (
     <></>

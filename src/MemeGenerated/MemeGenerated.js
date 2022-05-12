@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import "./MemeGenerated.css";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useClipboard } from "use-clipboard-copy";
-import fileDownload from "js-file-download";
 
 function MemeGenerated() {
   const [copied, setCopied] = useState(false);
@@ -15,13 +14,21 @@ function MemeGenerated() {
     copyClipboard.copy(url);
     setCopied(true);
   };
-
   const downloadMeme = () => {
-    const fileName = url.split("/").pop();
-
-    fetch(url).then((res) => {
-      fileDownload(res.data, fileName);
-    });
+    let name = url.split("/").pop();
+    fetch(url)
+      .then((resp) => resp.blob())
+      .then((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.style.display = "none";
+        a.href = url;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        URL.revokeObjectURL(url);
+      })
+      .catch(() => alert("An error sorry"));
   };
 
   return (

@@ -10,8 +10,8 @@ button {
   border-radius: 3px;
 }
 img {
-  max-width: 500px;
-  max-height: 500px;
+  max-width: 300px;
+  max-height: 300px;
   margin: auto;
   margin-top: 50px;
   display: block;
